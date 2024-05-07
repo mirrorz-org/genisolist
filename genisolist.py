@@ -7,7 +7,6 @@ import logging
 from argparse import ArgumentParser
 from pathlib import Path
 import sys
-import json
 import re
 from urllib.parse import urljoin
 
@@ -115,9 +114,13 @@ def parse_section(section: dict, root: Path) -> list:
         locations = [section["location"]]
     else:
         locations = []
-        for key, value in section.items():
-            if key.startswith("location_"):
-                locations.append(value)
+        i = 0
+        while True:
+            location = section.get(f"location_{i}", None)
+            if location is None:
+                break
+            locations.append(location)
+            i += 1
     assert locations, "No location found in section"
 
     pattern = section.get("pattern", "")
@@ -125,7 +128,7 @@ def parse_section(section: dict, root: Path) -> list:
     pattern = re.compile(pattern)
 
     listvers = int(section.get("listvers", 0xFF))
-    nosort = section.get("nosort", False)
+    nosort = bool(section.get("nosort", False))
 
     files = defaultdict(list)
     for location in locations:
@@ -220,10 +223,11 @@ def gen_from_sections(sections: dict) -> list:
     del sections["%main%"]
 
     dN = {}
-    for key, value in sections["%distro%"].items():
-        if key.startswith("d"):
-            dN[value] = int(key[1:])
-    del sections["%distro%"]
+    if sections.get("%distro%"):
+        for key, value in sections["%distro%"].items():
+            if key.startswith("d"):
+                dN[value] = int(key[1:])
+        del sections["%distro%"]
 
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
