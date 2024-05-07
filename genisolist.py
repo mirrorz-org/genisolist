@@ -202,9 +202,9 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     return {"name": desc, "url": url}
 
 
-def gen_from_ini(ini_path: Path) -> list:
+def gen_from_sections(sections: dict) -> list:
     """
-    Read ini file, parse and return a list. Each item of the list is a dictionary with following schema:
+    Parse sections and return a list. Each item of the list is a dictionary with following schema:
 
     {
         "distro": str,
@@ -212,27 +212,27 @@ def gen_from_ini(ini_path: Path) -> list:
         "urls": [{"name": str, "url": url}]
     }
     """
-    ini = ConfigParser()
-    if not ini.read(ini_path):
-        raise FileNotFoundError(f"Cannot find or parse {ini_path}")
 
-    # %main% contains root path, url base and distribution sorting
-    main = dict(ini.items("%main%"))
+    # %main% contains root path and url base
+    main = sections["%main%"]
     root = Path(main["root"])
     urlbase = main["urlbase"]
+    del sections["%main%"]
+
     dN = {}
-    for key, value in main.items():
+    for key, value in sections["%distro%"].items():
         if key.startswith("d"):
             dN[value] = int(key[1:])
+    del sections["%distro%"]
 
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
     results = defaultdict(list)
-    for section in ini.sections():
-        if section == "%main%":
-            continue
-        section = dict(ini.items(section))
+    for section in sections.values():
         section_name = section["distro"]
+        # set default category to "os", if not exists
+        if "category" not in section:
+            section["category"] = "os"
         section_category = section["category"]
         for file_item in parse_section(section, root):
             results[(section_name, section_category)].append(
@@ -248,10 +248,35 @@ def gen_from_ini(ini_path: Path) -> list:
     return results
 
 
+def read_from_inis(inis: list) -> dict:
+    """
+    Read all inis, use ConfigParser to parse them and return a dictionary with section names as keys, and parsed sections (dict) as values.
+    """
+
+    results = {}
+    for ini in inis:
+        parser = ConfigParser()
+        if not parser.read(ini):
+            raise FileNotFoundError(f"Cannot find or parse {ini}")
+
+        for section in parser.sections():
+            results[section] = dict(parser.items(section))
+
+    return results
+
+
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     parser = ArgumentParser("genisolist")
-    parser.add_argument("--ini", help="Path to the ini file", type=Path)
+    parser.add_argument(
+        "--inis",
+        help="Paths to the ini file, splitted by colon (:). The later section overrides the earlier section with the same name.",
+        type=lambda x: [Path(p) for p in x.split(":")],
+    )
     args = parser.parse_args()
-    print(gen_from_ini(args.ini))
+    if not args.inis:
+        parser.print_help()
+        sys.exit(1)
+    sections = read_from_inis(args.inis)
+    print(gen_from_sections(sections))
