@@ -266,7 +266,11 @@ def process_ini(ini: Path) -> dict:
         with open(ini) as f:
             for line in f:
                 if line.startswith("!include"):
-                    include_file = Path(line.split()[1])
+                    include_path = Path(line.split()[1])
+                    if not include_path.is_absolute():
+                        include_file = ini.parent / Path(line.split()[1])
+                    else:
+                        include_file = include_path
                     ini_contents += process_include(include_file)
                 else:
                     ini_contents += line

@@ -35,6 +35,8 @@ urlbase = /
 !include includes/font/google_fonts.ini
 ```
 
+`!include` 后的路径如果是相对路径，则相对于该 ini 文件的路径。
+
 在 `!include` 被处理后，其是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。INI 格式由多个 **section** 组成，其中 `genisolist.ini` 有两个特殊的 section：
 
 - `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。可参考 [./includes/main.example.ini](./includes/main.example.ini)。
