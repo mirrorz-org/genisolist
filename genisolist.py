@@ -7,7 +7,9 @@ import logging
 from argparse import ArgumentParser
 from pathlib import Path
 import sys
+import os
 import re
+import json
 from urllib.parse import urljoin
 
 from version import LooseVersion
@@ -252,35 +254,44 @@ def gen_from_sections(sections: dict) -> list:
     return results
 
 
-def read_from_inis(inis: list) -> dict:
+def process_ini(ini: Path) -> dict:
     """
-    Read all inis, use ConfigParser to parse them and return a dictionary with section names as keys, and parsed sections (dict) as values.
+    Read the ini, replace !include to specific ini file, and use ConfigParser
+    to parse them and return a dictionary with section names as keys,
+    and parsed sections (dict) as values.
     """
 
-    results = {}
-    for ini in inis:
-        parser = ConfigParser()
-        if not parser.read(ini):
-            raise FileNotFoundError(f"Cannot find or parse {ini}")
+    def process_include(ini: Path) -> str:
+        ini_contents = ""
+        with open(ini) as f:
+            for line in f:
+                if line.startswith("!include"):
+                    include_file = Path(line.split()[1])
+                    ini_contents += process_include(include_file)
+                else:
+                    ini_contents += line
+        return ini_contents
 
-        for section in parser.sections():
-            results[section] = dict(parser.items(section))
+    ini_contents = process_include(ini)
+    parser = ConfigParser()
+    parser.read_string(ini_contents)
 
-    return results
+    return {section: dict(parser[section]) for section in parser.sections()}
 
 
 if __name__ == "__main__":
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    if os.getenv("DEBUG"):
+        logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     parser = ArgumentParser("genisolist")
     parser.add_argument(
-        "--inis",
-        help="Paths to the ini file, splitted by colon (:). The later section overrides the earlier section with the same name.",
-        type=lambda x: [Path(p) for p in x.split(":")],
+        "--ini",
+        help="Path to the ini file.",
+        type=Path,
     )
     args = parser.parse_args()
-    if not args.inis:
+    if not args.ini:
         parser.print_help()
         sys.exit(1)
-    sections = read_from_inis(args.inis)
-    print(gen_from_sections(sections))
+    sections = process_ini(args.ini)
+    print(json.dumps(gen_from_sections(sections)))

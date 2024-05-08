@@ -20,7 +20,22 @@
 
 ### 文件格式
 
-`genisolist.ini` 是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。INI 格式由多个 **section** 组成，其中 `genisolist.ini` 有两个特殊的 section：
+`genisolist.ini` 的格式类似于 INI，但是包含 `!include` 标记，用于引入其他文件。参考例子 [example.ini](./example.ini)。
+
+```ini
+# %main% contains mirror site specific settings
+
+[%main%]
+root = /tmp/genisolist/
+urlbase = /
+
+!include includes/distro.ini
+!include includes/os/archlinux.ini
+!include includes/app/vlc.ini
+!include includes/font/google_fonts.ini
+```
+
+在 `!include` 被处理后，其是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。INI 格式由多个 **section** 组成，其中 `genisolist.ini` 有两个特殊的 section：
 
 - `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。可参考 [./includes/main.example.ini](./includes/main.example.ini)。
 - `%distro%`（可选）：存储发行版排序的权重。可参考 [./includes/distro.ini](./includes/distro.ini)。早先的版本中这一部分的内容在 `%main%` 中。
@@ -77,17 +92,25 @@
 [genisolist.py](./genisolist.py) 为参考实现，用于从配置与本地文件系统输出以上的 JSON 格式。可以使用其 `read_from_inis()` 和 `gen_from_sections()` 用于整合镜像站点的其他设施，也可以直接运行，例如下：
 
 ```console
-$ python genisolist.py --inis includes/arch_linux.ini:includes/distro.ini:includes/main.example.ini
+$ DEBUG=1 python genisolist.py --ini example.ini
 DEBUG:__main__:Location: archlinux/iso/latest/archlinux-*.iso
 DEBUG:__main__:File: /tmp/genisolist/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso
 DEBUG:__main__:Matched: ('2024.05.01', 'x86_64')
 DEBUG:__main__:File item: {'path': PosixPath('/tmp/genisolist/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso'), 'category': 'os', 'distro': 'Arch Linux', 'version': '2024.05.01', 'type': 'CLI-only', 'platform': 'x86_64', 'sort_weight': (LooseVersion ('2024.05.01'), 100, 'CLI-only')}
 DEBUG:__main__:File: /tmp/genisolist/archlinux/iso/latest/archlinux-x86_64.iso
 DEBUG:__main__:Not matched: /tmp/genisolist/archlinux/iso/latest/archlinux-x86_64.iso
-[{'distro': 'Arch Linux', 'category': 'os', 'urls': [{'name': '2024.05.01 (x86_64, CLI-only)', 'url': '/archlinux-2024.05.01-x86_64.iso'}]}]
+DEBUG:__main__:Location: videolan-ftp/vlc/*/*/*
+DEBUG:__main__:Location: videolan-ftp/vlc/*/*/*
+DEBUG:__main__:Location: videolan-ftp/vlc-android/*/*
+DEBUG:__main__:Location: videolan-ftp/vlc-iOS/*/*
+DEBUG:__main__:Location: github-release/googlefonts/*/*/*
+DEBUG:__main__:Location: github-release/googlefonts/noto-cjk/LatestRelease/*
+DEBUG:__main__:Location: github-release/googlefonts/noto-emoji/LatestRelease/*
+DEBUG:__main__:Location: github-release/googlefonts/noto-fonts/LatestRelease/*
+[{"distro": "Arch Linux", "category": "os", "urls": [{"name": "2024.05.01 (x86_64, CLI-only)", "url": "/archlinux-2024.05.01-x86_64.iso"}]}]
 ```
 
-其中 `main.example.ini` 中 `root` 的值为 `/tmp/genisolist`。对于本地测试，可以使用 [utils/rsync-stub-generator.py](utils/rsync-stub-generator.py) 从镜像站获取文件，并在本地生成一致的目录结构：
+输出为 JSON 格式的字符串，可以使用 `jq` 等工具做后续处理。对于本地测试，可以使用 [utils/rsync-stub-generator.py](utils/rsync-stub-generator.py) 从镜像站获取文件，并在本地生成一致的目录结构：
 
 ```shell
 python utils/rsync-stub-generator.py rsync://rsync.mirrors.ustc.edu.cn/archlinux --dist /tmp/genisolist/archlinux
