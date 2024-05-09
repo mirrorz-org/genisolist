@@ -54,7 +54,8 @@ def render(template: str, result: re.Match) -> str:
     for i in range(len(result.groups()) + 1):
         grp = result.group(i)
         if f"${i}" in template:
-            assert grp is not None, f"Group {i} is not matched with template {template}"
+            if grp is None:
+                grp = ""
             template = template.replace(f"${i}", grp)
     return template
 
@@ -73,9 +74,8 @@ def render_list(template: str, result: re.Match) -> list:
             l.append(item)
         else:
             grp = result.group(int(item[1:]))
-            assert (
-                grp is not None
-            ), f"Group {int(item[1:])} is not matched with template {template}"
+            if grp is None:
+                grp = ""
             l.append(grp)
     return l
 
