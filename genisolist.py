@@ -104,7 +104,7 @@ def parse_section(section: dict, root: Path) -> list:
     A "file item" should at least have following schema:
 
     {
-        "path": Path,
+        "path": str (relative path to root),
         "category": str,
         "version": str,
         "platform": str,
@@ -137,7 +137,8 @@ def parse_section(section: dict, root: Path) -> list:
         logger.debug("Location: %s", location)
         file_list = root.glob(location)
         for file_path in file_list:
-            logger.debug("File: %s", file_path)
+            relative_path = file_path.relative_to(root)
+            logger.debug("File: %s", relative_path)
             result = pattern.search(file_path.name)
 
             if not result:
@@ -146,7 +147,7 @@ def parse_section(section: dict, root: Path) -> list:
             logger.debug("Matched: %r", result.groups())
 
             file_item = {
-                "path": file_path,
+                "path": str(relative_path),
                 "category": section.get("category", "os"),  # Default to "os"
                 "distro": section["distro"],
                 "version": render(section["version"], result),
@@ -194,7 +195,7 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     }
     """
 
-    url = urljoin(urlbase, file_item["path"].name)
+    url = urljoin(urlbase, file_item["path"])
     if file_item["platform"]:
         desc = "%s (%s%s)" % (
             file_item["version"],
