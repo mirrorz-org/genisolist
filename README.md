@@ -117,3 +117,40 @@ DEBUG:__main__:Location: github-release/googlefonts/noto-fonts/LatestRelease/*
 ```shell
 python utils/rsync-stub-generator.py rsync://rsync.mirrors.ustc.edu.cn/archlinux --dist /tmp/genisolist/archlinux
 ```
+
+对于镜像站点，推荐使用 **git submodule** 的方式引入本仓库：
+
+- 添加 submodule：
+
+    ```shell
+    git submodule add https://github.com/mirrorz/genisolist.git mirrorz-genisolist
+    ```
+
+- 首次使用：
+
+    ```shell
+    git submodule update --init --recursive
+    ```
+
+- 更新版本：
+
+    ```shell
+    git submodule update --recursive --remote
+    ```
+
+同时镜像站点自行维护最外层的 ini 文件，假设在仓库根目录下的 `genisolist.ini`：
+
+```ini
+[%main%]
+root = /data/
+urlbase = /
+
+# 导入 mirrorz/genisolist 的子配置
+!include mirrorz-genisolist/includes/distro.ini
+!include mirrorz-genisolist/includes/os/archlinux.ini
+!include mirrorz-genisolist/includes/app/vlc.ini
+!include mirrorz-genisolist/includes/font/google_fonts.ini
+
+# 导入镜像站自己维护的子配置
+!include genisolist/os/example.ini
+```
