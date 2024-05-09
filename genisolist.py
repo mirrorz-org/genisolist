@@ -91,9 +91,9 @@ def parse_section(section: dict, root: Path) -> list:
         "listvers": Optional[int] (defaults to 0xff, or 255),
         "location": str,
         "pattern": str,
-        "version": str,
+        "version": Optional[str] (defaults to ""),
         "type": Optional[str] (defaults to ""),
-        "platform": str,
+        "platform": Optional[str] (defaults to ""),
         "category": Optional[str] (treats as "os" if not present),
         "key_by": Optional[str] (defaults to "" -- no keying),
         "sort_by": Optional[str] (defaults to sort by version, platform and type),
@@ -151,9 +151,9 @@ def parse_section(section: dict, root: Path) -> list:
                 "path": str(relative_path),
                 "category": section.get("category", "os"),  # Default to "os"
                 "distro": section["distro"],
-                "version": render(section["version"], result),
+                "version": render(section.get("version", ""), result),
                 "type": render(section.get("type", ""), result),
-                "platform": render(section["platform"], result),
+                "platform": render(section.get("platform", ""), result),
             }
 
             custom_sort_by = section.get("sort_by", "")
