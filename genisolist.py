@@ -149,15 +149,19 @@ def parse_section(section: dict, root: Path) -> list:
 
     listvers = int(section.get("listvers", 0xFF))
     nosort = str2bool(section.get("nosort", "false"))
+    pattern_use_path = str2bool(section.get("pattern_use_path", "false"))
 
     files = defaultdict(list)
     for location in locations:
         logger.debug("Location: %s", location)
         file_list = root.glob(location)
         for file_path in file_list:
-            relative_path = file_path.relative_to(root)
+            relative_path = str(file_path.relative_to(root))
             logger.debug("File: %s", relative_path)
-            result = pattern.search(file_path.name)
+            if pattern_use_path:
+                result = pattern.search(relative_path)
+            else:
+                result = pattern.search(file_path.name)
 
             if not result:
                 logger.debug("Not matched: %s", file_path)
@@ -165,7 +169,7 @@ def parse_section(section: dict, root: Path) -> list:
             logger.debug("Matched: %r", result.groups())
 
             file_item = {
-                "path": str(relative_path),
+                "path": relative_path,
                 "category": section.get("category", "os"),  # Default to "os"
                 "distro": section["distro"],
                 "version": render(section.get("version", ""), result),
