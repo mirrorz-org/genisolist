@@ -37,10 +37,12 @@ urlbase = /
 
 `!include` 后的路径如果是相对路径，则相对于该 ini 文件的路径。
 
-在 `!include` 被处理后，其是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。INI 格式由多个 **section** 组成，其中 `genisolist.ini` 有两个特殊的 section：
+在 `!include` 被处理后，其是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开头的 section 为特殊 section，目前定义的特殊 section 如下：
 
 - `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。可参考 [./includes/main.example.ini](./includes/main.example.ini)。
 - `%distro%`（可选）：存储发行版排序的权重。可参考 [./includes/distro.ini](./includes/distro.ini)。早先的版本中这一部分的内容在 `%main%` 中。
+
+其他以 `%` 开头的 section 会被忽略，在新版本的 genisolist 中可能会添加其他的特殊 section。
 
 其他的 section 用于表示展示内容与文件匹配规则，section 的名称（即方括号内的内容）会被忽略，重复的 section 名称出现时的行为未定义。Section 中必须包含以下的字段：
 

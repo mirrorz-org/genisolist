@@ -223,19 +223,19 @@ def gen_from_sections(sections: dict) -> list:
     main = sections["%main%"]
     root = Path(main["root"])
     urlbase = main["urlbase"]
-    del sections["%main%"]
 
     dN = {}
     if sections.get("%distro%"):
         for key, value in sections["%distro%"].items():
             if key.startswith("d"):
                 dN[value] = int(key[1:])
-        del sections["%distro%"]
 
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
     results = defaultdict(list)
     for section in sections.values():
+        if section.startswith("%"):
+            continue
         section_name = section["distro"]
         # set default category to "os", if not exists
         if "category" not in section:
