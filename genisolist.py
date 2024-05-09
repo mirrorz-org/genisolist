@@ -208,7 +208,7 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     return {"name": desc, "url": url}
 
 
-def gen_from_sections(sections: dict) -> list:
+def gen_from_sections(sections: dict, strict: bool = False) -> list:
     """
     Parse sections and return a list. Each item of the list is a dictionary with following schema:
 
@@ -241,10 +241,15 @@ def gen_from_sections(sections: dict) -> list:
         if "category" not in section:
             section["category"] = "os"
         section_category = section["category"]
-        for file_item in parse_section(section, root):
-            results[(section_name, section_category)].append(
-                parse_file(file_item, urlbase)
-            )
+        try:
+            for file_item in parse_section(section, root):
+                results[(section_name, section_category)].append(
+                    parse_file(file_item, urlbase)
+                )
+        except Exception as e:
+            logger.exception(f"Error parsing section [{sname}]")
+            if strict:
+                raise e
 
     # Convert results to output
     results = [
@@ -287,16 +292,15 @@ def process_ini(ini: Path) -> dict:
 if __name__ == "__main__":
     if os.getenv("DEBUG"):
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    else:
+        logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
     parser = ArgumentParser("genisolist")
-    parser.add_argument(
-        "ini",
-        help="Path to the ini file.",
-        type=Path,
-    )
+    parser.add_argument("ini", help="Path to the ini file.", type=Path)
+    parser.add_argument("--strict", help="Enable strict mode", action="store_true")
     args = parser.parse_args()
     if not args.ini:
         parser.print_help()
         sys.exit(1)
     sections = process_ini(args.ini)
-    print(json.dumps(gen_from_sections(sections)))
+    print(json.dumps(gen_from_sections(sections, args.strict)))
