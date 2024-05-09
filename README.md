@@ -41,7 +41,7 @@ urlbase = /
 
 INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开头的 section 为特殊 section，目前定义的特殊 section 如下：
 
-- `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。可参考 [./includes/main.example.ini](./includes/main.example.ini)。
+- `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。
 - `%distro%`（可选）：存储发行版排序的权重。可参考 [./includes/distro.ini](./includes/distro.ini)。早先的版本中这一部分的内容在 `%main%` 中。
 
 其他以 `%` 开头的 section 会被忽略，在新版本的 genisolist 中可能会添加其他的特殊 section。
