@@ -80,6 +80,23 @@ def render_list(template: str, result: re.Match) -> list:
     return l
 
 
+def str2bool(v: str) -> bool:
+    """
+    Convert a string to boolean:
+
+    "true", "True" -> True
+    "false", "False" -> False
+    Otherwise -> raise ValueError
+    """
+
+    if v.lower() == "true":
+        return True
+    elif v.lower() == "false":
+        return False
+    else:
+        raise ValueError(f"{v} is not a boolean value")
+
+
 def parse_section(section: dict, root: Path) -> list:
     """
     Parse a distribution section and return a list of sorted file items.
@@ -131,7 +148,7 @@ def parse_section(section: dict, root: Path) -> list:
     pattern = re.compile(pattern)
 
     listvers = int(section.get("listvers", 0xFF))
-    nosort = bool(section.get("nosort", False))
+    nosort = str2bool(section.get("nosort", "false"))
 
     files = defaultdict(list)
     for location in locations:
