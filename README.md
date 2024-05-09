@@ -42,11 +42,11 @@ urlbase = /
 - `%main%`：存储镜像站的特定配置，目前包含 `root`（镜像根目录）和 `urlbase`（镜像站 URL 前缀）。可参考 [./includes/main.example.ini](./includes/main.example.ini)。
 - `%distro%`（可选）：存储发行版排序的权重。可参考 [./includes/distro.ini](./includes/distro.ini)。早先的版本中这一部分的内容在 `%main%` 中。
 
-其他的 section 用于表示展示内容与文件匹配规则，section 的名称（即方括号内的内容）会被忽略。Section 中必须包含以下的字段：
+其他的 section 用于表示展示内容与文件匹配规则，section 的名称（即方括号内的内容）会被忽略，重复的 section 名称出现时的行为未定义。Section 中必须包含以下的字段：
 
 - `distro`：显示名称（发行版名称、软件名称、字体名称等）。允许多个 section 使用相同的显示名称，最终显示时会合并。
-- `location` 或 `location_N`（N 为数字，从 0 开始）：文件路径匹配的通配符（glob）规则。生成器会根据 `root` 与 `location` 获取可能匹配的文件列表。
-- `pattern`：文件名正则表达式规则。文件名不匹配的文件会被忽略。正则表达式中允许使用捕获组特性（即使用括号包裹的部分），被捕获的部分可以在 `version`、`type`、`platform`、`key_by`、`sort_by` 中使用。与其他软件类似，`$0` 代表整个匹配的字符串，`$1` 代表第一个捕获组，以此类推。
+- `location` 或 `location_N`（N 为数字，从 0 开始）：文件路径匹配的通配符（glob）规则，在参考实现中使用 `pathlib.Path.glob` 处理。生成器会根据 `root` 与 `location` 获取可能匹配的文件列表。
+- `pattern`：文件名正则表达式规则。文件名不匹配的文件会被忽略。正则表达式中允许使用捕获组特性（即使用括号包裹的部分），被捕获的部分可以在 `version`、`type`、`platform`、`key_by`、`sort_by` 中使用。与其他软件类似，`$0` 代表整个匹配的字符串，`$1` 代表第一个捕获组，以此类推。可以在 <https://regex101.com/> 测试正则表达式行为。
 - `version`：版本号信息。脚本会尝试使用符合版本语义的方式比较不同的版本号。
 - `platform`：平台信息。脚本会根据平台的优先级（常见以及重要程度）对不同平台、相同版本的文件排序。
 
@@ -82,7 +82,7 @@ urlbase = /
         "urls": [
             {
                 "name": "2024.05.01 (x86_64, CLI-only)",
-                "url": "/archlinux-2024.05.01-x86_64.iso"
+                "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso"
             }
         ]
     }
@@ -91,15 +91,15 @@ urlbase = /
 
 ## 使用
 
-[genisolist.py](./genisolist.py) 为参考实现，用于从配置与本地文件系统输出以上的 JSON 格式。可以使用其 `read_from_inis()` 和 `gen_from_sections()` 用于整合镜像站点的其他设施，也可以直接运行，例如下：
+[genisolist.py](./genisolist.py) 为参考实现，用于从配置与本地文件系统输出以上的 JSON 格式。可以使用其 `process_ini()` 和 `gen_from_sections()` 用于整合镜像站点的其他设施，也可以直接运行，例如下：
 
 ```console
-$ DEBUG=1 python genisolist.py --ini example.ini
+$ DEBUG=1 python genisolist.py example.ini
 DEBUG:__main__:Location: archlinux/iso/latest/archlinux-*.iso
-DEBUG:__main__:File: /tmp/genisolist/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso
+DEBUG:__main__:File: archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso
 DEBUG:__main__:Matched: ('2024.05.01', 'x86_64')
-DEBUG:__main__:File item: {'path': PosixPath('/tmp/genisolist/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso'), 'category': 'os', 'distro': 'Arch Linux', 'version': '2024.05.01', 'type': 'CLI-only', 'platform': 'x86_64', 'sort_weight': (LooseVersion ('2024.05.01'), 100, 'CLI-only')}
-DEBUG:__main__:File: /tmp/genisolist/archlinux/iso/latest/archlinux-x86_64.iso
+DEBUG:__main__:File item: {'path': 'archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso', 'category': 'os', 'distro': 'Arch Linux', 'version': '2024.05.01', 'type': 'CLI-only', 'platform': 'x86_64', 'sort_weight': (LooseVersion ('2024.05.01'), 100, 'CLI-only')}
+DEBUG:__main__:File: archlinux/iso/latest/archlinux-x86_64.iso
 DEBUG:__main__:Not matched: /tmp/genisolist/archlinux/iso/latest/archlinux-x86_64.iso
 DEBUG:__main__:Location: videolan-ftp/vlc/*/*/*
 DEBUG:__main__:Location: videolan-ftp/vlc/*/*/*
@@ -109,7 +109,7 @@ DEBUG:__main__:Location: github-release/googlefonts/*/*/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-cjk/LatestRelease/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-emoji/LatestRelease/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-fonts/LatestRelease/*
-[{"distro": "Arch Linux", "category": "os", "urls": [{"name": "2024.05.01 (x86_64, CLI-only)", "url": "/archlinux-2024.05.01-x86_64.iso"}]}]
+[{"distro": "Arch Linux", "category": "os", "urls": [{"name": "2024.05.01 (x86_64, CLI-only)", "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso"}]}]
 ```
 
 输出为 JSON 格式的字符串，可以使用 `jq` 等工具做后续处理。对于本地测试，可以使用 [utils/rsync-stub-generator.py](utils/rsync-stub-generator.py) 从镜像站获取文件，并在本地生成一致的目录结构：

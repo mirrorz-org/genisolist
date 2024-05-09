@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser("genisolist")
     parser.add_argument(
-        "--ini",
+        "ini",
         help="Path to the ini file.",
         type=Path,
     )
