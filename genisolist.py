@@ -15,6 +15,7 @@ from urllib.parse import urljoin
 from version import LooseVersion
 
 logger = logging.getLogger(__name__)
+exit_with_error = False
 
 
 def get_platform_priority(platform: str) -> int:
@@ -218,6 +219,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
         "urls": [{"name": str, "url": url}]
     }
     """
+    global exit_with_error
 
     # %main% contains root path and url base
     main = sections["%main%"]
@@ -247,6 +249,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
                     parse_file(file_item, urlbase)
                 )
         except Exception as e:
+            exit_with_error = True
             logger.exception(f"Error parsing section [{sname}]")
             if strict:
                 raise e
@@ -304,3 +307,5 @@ if __name__ == "__main__":
         sys.exit(1)
     sections = process_ini(args.ini)
     print(json.dumps(gen_from_sections(sections, args.strict)))
+    if exit_with_error:
+        sys.exit(1)
