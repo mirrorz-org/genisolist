@@ -233,8 +233,8 @@ def gen_from_sections(sections: dict) -> list:
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
     results = defaultdict(list)
-    for section in sections.values():
-        if section.startswith("%"):
+    for sname, section in sections.items():
+        if sname.startswith("%"):
             continue
         section_name = section["distro"]
         # set default category to "os", if not exists
