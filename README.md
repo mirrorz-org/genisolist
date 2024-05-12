@@ -73,7 +73,7 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
     `sort_by` 中的值应为空白符分割的捕获组。
 
 - `nosort`：布尔值。默认为 `false`。如果为 `true`，则不对文件进行排序。
-- `pattern_use_path`：布尔值。默认为 `false`。如果为 `true`，则 pattern 的正则表达式规则会使用文件路径而非文件名进行正则匹配。
+- `pattern_use_name`：布尔值。默认为 `false`。如果为 `true`，则 pattern 的正则表达式规则只使用文件名，而非整个文件路径进行正则匹配。
 
 ### 输出格式
 

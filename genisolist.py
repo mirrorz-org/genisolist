@@ -149,7 +149,7 @@ def parse_section(section: dict, root: Path) -> list:
 
     listvers = int(section.get("listvers", 0xFF))
     nosort = str2bool(section.get("nosort", "false"))
-    pattern_use_path = str2bool(section.get("pattern_use_path", "false"))
+    pattern_use_name = str2bool(section.get("pattern_use_name", "false"))
 
     files = defaultdict(list)
     for location in locations:
@@ -158,7 +158,7 @@ def parse_section(section: dict, root: Path) -> list:
         for file_path in file_list:
             relative_path = str(file_path.relative_to(root))
             logger.debug("File: %s", relative_path)
-            if pattern_use_path:
+            if not pattern_use_name:
                 result = pattern.search(relative_path)
             else:
                 result = pattern.search(file_path.name)
