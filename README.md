@@ -137,7 +137,7 @@ python utils/rsync-stub-generator.py rsync://rsync.mirrors.ustc.edu.cn/archlinux
 - 添加 submodule：
 
     ```shell
-    git submodule add https://github.com/mirrorz/genisolist.git mirrorz-genisolist
+    git submodule add https://github.com/mirrorz-org/genisolist.git mirrorz-genisolist
     ```
 
 - 首次使用：
