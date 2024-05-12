@@ -1,4 +1,4 @@
-# genisolist [Draft]
+# genisolist
 
 `genisolist.ini` 格式有关文档、参考实现与公用配置。
 
@@ -49,7 +49,7 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
 其他的 section 用于表示展示内容与文件匹配规则，section 的名称（即方括号内的内容）会被忽略，重复的 section 名称出现时的行为未定义。Section 中必须包含以下的字段：
 
 - `distro`：显示名称（发行版名称、软件名称、字体名称等）。允许多个 section 使用相同的显示名称，最终显示时会合并。
-- `location` 或 `location_N`（N 为数字，从 0 开始）：文件路径匹配的通配符（glob）规则，在参考实现中使用 `pathlib.Path.glob` 处理。生成器会根据 `root` 与 `location` 获取可能匹配的文件列表。
+- 单个 `location` 或一组 `location_{0..N-1}`（N 为数字，从 0 开始）：文件路径匹配的通配符（glob）规则，在参考实现中使用 `pathlib.Path.glob` 处理。生成器会根据 `root` 与 `location` 获取可能匹配的文件列表。
 - `pattern`：文件名正则表达式规则。文件名不匹配的文件会被忽略。正则表达式中允许使用捕获组特性（即使用括号包裹的部分），被捕获的部分可以在 `version`、`type`、`platform`、`key_by`、`sort_by` 中使用。与其他软件类似，`$0` 代表整个匹配的字符串，`$1` 代表第一个捕获组，以此类推。不存在的匹配组以空字符串处理。可以在 <https://regex101.com/> 测试正则表达式行为。
 
 以下是可选字段：
@@ -145,13 +145,13 @@ python utils/rsync-stub-generator.py rsync://rsync.mirrors.ustc.edu.cn/archlinux
     git submodule update --init --recursive
     ```
 
-- 更新版本：
+- 在有需要时更新版本：
 
     ```shell
     git submodule update --recursive --remote
     ```
 
-同时镜像站点自行维护最外层的 ini 文件，假设在仓库根目录下的 `genisolist.ini`：
+同时镜像站点自行维护最外层的 ini 配置文件，假设在仓库根目录下的 `genisolist.ini`：
 
 ```ini
 [%main%]
@@ -167,3 +167,4 @@ urlbase = /
 # 导入镜像站自己维护的子配置
 !include genisolist/os/example.ini
 ```
+
