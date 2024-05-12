@@ -242,11 +242,12 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     """
     global exit_with_error
 
-    # %main% contains root path and url base
-    main = sections["%main%"]
-    root = Path(main["root"])
-    urlbase = main["urlbase"]
+    # `%main%` contains root path and url base
+    main = sections.get("%main%", {})
+    root = Path(main.get("root", "."))
+    urlbase = main.get("urlbase", "/")
 
+    # `%distro%` contains distribution names and their priority
     dN = {}
     if sections.get("%distro%"):
         for key, value in sections["%distro%"].items():
@@ -314,6 +315,7 @@ def process_ini(ini: Path) -> dict:
 
 
 if __name__ == "__main__":
+
     if os.getenv("DEBUG"):
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     else:
@@ -326,6 +328,7 @@ if __name__ == "__main__":
     if not args.ini:
         parser.print_help()
         sys.exit(1)
+
     sections = process_ini(args.ini)
     print(json.dumps(gen_from_sections(sections, args.strict)))
     if exit_with_error:
