@@ -114,7 +114,6 @@ def parse_section(section: dict, root: Path) -> list:
         "category": Optional[str] (treats as "os" if not present),
         "key_by": Optional[str] (defaults to "" -- no keying),
         "sort_by": Optional[str] (defaults to sort by version, platform and type),
-        "nosort": Optional[bool] (defaults to False),
     }
 
     Exception could be raised if any of the required fields is missing.
@@ -127,6 +126,7 @@ def parse_section(section: dict, root: Path) -> list:
         "version": str,
         "platform": str,
         "type": str,
+        "sort_weight": list,
     }
     """
 
@@ -148,7 +148,6 @@ def parse_section(section: dict, root: Path) -> list:
     pattern = re.compile(pattern)
 
     listvers = int(section.get("listvers", 0xFF))
-    nosort = str2bool(section.get("nosort", "false"))
     pattern_use_name = str2bool(section.get("pattern_use_name", "false"))
 
     files = defaultdict(list)
@@ -179,11 +178,11 @@ def parse_section(section: dict, root: Path) -> list:
 
             custom_sort_by = section.get("sort_by", "")
             if not custom_sort_by:
-                file_item["sort_weight"] = (
+                file_item["sort_weight"] = [
                     LooseVersion(file_item["version"]),
                     get_platform_priority(file_item["platform"]),
                     file_item["type"],
-                )
+                ]
             else:
                 file_item["sort_weight"] = render_list(custom_sort_by, result)
             logger.debug("File item: %r", file_item)
@@ -193,8 +192,7 @@ def parse_section(section: dict, root: Path) -> list:
 
     results = []
     for file_list in files.values():
-        if not nosort:
-            file_list.sort(key=lambda x: x["sort_weight"], reverse=True)
+        file_list.sort(key=lambda x: x["sort_weight"], reverse=True)
 
         versions = set()
         for file_item in file_list:
@@ -267,14 +265,17 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
         section_category = section["category"]
         try:
             for file_item in parse_section(section, root):
-                results[(section_name, section_category)].append(
-                    parse_file(file_item, urlbase)
-                )
+                results[(section_name, section_category)].append(file_item)
         except Exception as e:
             exit_with_error = True
             logger.exception(f"Error parsing section [{sname}]")
             if strict:
                 raise e
+
+    for k in results:
+        v = results[k]
+        v.sort(key=lambda x: x["sort_weight"], reverse=True)
+        results[k] = [parse_file(file_item, urlbase) for file_item in v]
 
     # Convert results to output
     results = [
