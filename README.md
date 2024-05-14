@@ -106,6 +106,16 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
 
 如果没有 `platform` 字段，那么值为 `version` 字段。
 
+### 测试
+
+项目提供了 `utils/check-config.py` 检查配置文件的正确性。使用方法如：
+
+```shell
+python3 utils/check-config.py includes/
+```
+
+如果参数是目录，则脚本会遍历目录下所有的 ini 文件，逐个尝试进行解析和检查；如果是单个文件，则只检查该文件。
+
 ## 使用
 
 [genisolist.py](./genisolist.py) 为参考实现，用于从配置与本地文件系统输出以上的 JSON 格式。可以使用其 `process_ini()` 和 `gen_from_sections()` 用于整合镜像站点的其他设施，也可以直接运行，例如下：
