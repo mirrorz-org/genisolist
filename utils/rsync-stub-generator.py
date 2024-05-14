@@ -37,7 +37,9 @@ def main(upstream: str, dist: Path) -> None:
                         continue
                     else:
                         print(symlink_target, target)
-                print("Symlink already exists -- maybe you should nuke the dist directory first?")
+                print(
+                    "Symlink already exists -- maybe you should nuke the dist directory first?"
+                )
                 print("Symlink:", symlink)
                 print("Target:", target)
                 exit(-1)
