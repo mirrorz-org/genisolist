@@ -15,6 +15,6 @@ jobs:
       - name: Check code format
         run: |
           pip install black
-          black --check .
+          black --check --exclude version.py .
       - name: Check config sanity
         run: python3 utils/check-config.py includes/

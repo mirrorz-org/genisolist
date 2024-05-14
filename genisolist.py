@@ -316,7 +316,6 @@ def process_ini(ini: Path) -> dict:
 
 
 if __name__ == "__main__":
-
     if os.getenv("DEBUG"):
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     else:
