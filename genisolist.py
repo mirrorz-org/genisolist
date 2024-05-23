@@ -306,6 +306,8 @@ def process_ini(ini: Path) -> dict:
                     ini_contents += process_include(include_file)
                 else:
                     ini_contents += line
+            # add a newline at the end of the file, to avoid it being concatenated with the next file
+            ini_contents += "\n"
         return ini_contents
 
     ini_contents = process_include(ini)
