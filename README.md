@@ -33,7 +33,8 @@ urlbase = /
 
 !include includes/os/archlinux.ini
 !include includes/app/vlc.ini
-!include includes/font/google_fonts.ini
+!include includes/app/github/rust-analyzer.ini
+!include includes/font/adobe_source.ini
 ```
 
 `!include` 后的路径如果是相对路径，则是相对于该 ini 文件的路径。
@@ -116,6 +117,16 @@ python3 utils/check-config.py includes/
 
 如果参数是目录，则脚本会遍历目录下所有的 ini 文件，逐个尝试进行解析和检查；如果是单个文件，则只检查该文件。
 
+### 公用配置目录结构
+
+[`includes`](./includes/) 目录存储公用的配置文件，目前分为三类：
+
+- [app](./includes/app/)：软件安装包对应配置
+- [font](./includes/font/)：字体文件对应配置
+- [os](./includes/os/)：操作系统镜像对应配置
+
+其中类别下名为 `github` 的文件夹对应 [github-release](https://mirrorz.org/list/github-release) 收录的软件对应的配置，文件名为对应仓库的所有者（组织）。
+
 ## 使用
 
 [genisolist.py](./genisolist.py) 为参考实现，用于从配置与本地文件系统输出以上的 JSON 格式。可以使用其 `process_ini()` 和 `gen_from_sections()` 用于整合镜像站点的其他设施，也可以直接运行，例如下：
@@ -176,9 +187,15 @@ urlbase = /
 !include mirrorz-genisolist/includes/distro.ini
 !include mirrorz-genisolist/includes/os/archlinux.ini
 !include mirrorz-genisolist/includes/app/vlc.ini
-!include mirrorz-genisolist/includes/font/google_fonts.ini
+!include mirrorz-genisolist/includes/app/github/rust-analyzer.ini
+!include mirrorz-genisolist/includes/font/adobe_source.ini
 
 # 导入镜像站自己维护的子配置
 !include genisolist/os/example.ini
+
+# 镜像站也可以直接写 section
+[some-distro]
+distro = Some Distro
+# ...
 ```
 
