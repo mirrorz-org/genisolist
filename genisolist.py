@@ -23,21 +23,39 @@ def get_platform_priority(platform: str) -> int:
     Get the priority of the platform (arch). Higher is more preferred.
     """
 
+    architectures = {
+        ("amd64", "x86_64", "64bit"): 100,
+        ("arm64", "aarch64", "arm64v8"): 95,
+        ("riscv64"): 95,
+        ("loongson2f", "loongson3"): 95,
+        ("i386", "i486", "i586", "i686", "x86", "32bit"): 90,
+        ("arm32", "armhf", "armv7"): 85,
+    }
+    # OS priority value at thousands digit (more important than architecture)
+    oses = {
+        "linux": 5000,
+        "win": 4000,
+        "mac": 3000,
+        "android": 2000,
+    }
+
     platform = platform.lower()
-    if platform in ["amd64", "x86_64", "64bit"]:
-        return 100
-    elif platform in ["arm64", "aarch64", "arm64v8"]:
-        return 95
-    elif platform in ["riscv64"]:
-        return 95
-    elif platform in ["loongson2f", "loongson3"]:
-        return 95
-    elif platform in ["i386", "i486", "i586", "i686", "x86", "32bit"]:
-        return 90
-    elif platform in ["arm32", "armhf", "armv7"]:
-        return 85
-    else:
-        return 0
+
+    # Python would iterate this in user-defined order, so in cases like
+    # "x86" and "x86_64", "x86_64" shall be put before "x86"
+    score = 0
+    for arches in architectures:
+        for arch in arches:
+            if arch in platform:
+                score = architectures[arches]
+                break
+        if score != 0:
+            break
+    for os in oses:
+        if os in platform:
+            score += oses[os]
+            break
+    return score
 
 
 def render(template: str, result: re.Match) -> str:
