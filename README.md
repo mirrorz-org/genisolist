@@ -35,9 +35,10 @@ urlbase = /
 !include includes/app/vlc.ini
 !include includes/app/github/rust-analyzer.ini
 !include includes/font/adobe_source.ini
+!include includes/font/github/*.ini
 ```
 
-`!include` 后的路径如果是相对路径，则是相对于该 ini 文件的路径。
+`!include` 采用[通配符格式](https://docs.python.org/3/library/glob.html)。对应的路径如果是相对路径，则是相对于该 ini 文件的路径。
 
 在 `!include` 被处理后，其是一个与 Python 的 `configparser` 模块兼容的 INI 格式的配置文件。特别地，由于 INI 格式未规定布尔值，下文中的「布尔值」指代转换为小写后值为 `true` 或 `false` 的字符串，其他的值的行为未定义。
 

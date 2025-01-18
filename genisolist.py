@@ -11,6 +11,7 @@ import os
 import re
 import json
 from urllib.parse import urljoin
+from glob import glob
 
 from version import LooseVersion
 
@@ -313,15 +314,20 @@ def process_ini(ini: Path) -> dict:
 
     def process_include(ini: Path) -> str:
         ini_contents = ""
+        root_dir = ini.parent
         with open(ini) as f:
             for line in f:
                 if line.startswith("!include"):
-                    include_path = Path(line.split()[1])
-                    if not include_path.is_absolute():
-                        include_file = ini.parent / Path(line.split()[1])
-                    else:
-                        include_file = include_path
-                    ini_contents += process_include(include_file)
+                    include_glob = line.removeprefix("!include").strip()
+                    include_paths = glob(include_glob, root_dir=root_dir)
+                    assert include_paths, f"No file found for {include_glob}"
+                    for include_path in include_paths:
+                        include_path = Path(include_path)
+                        if not include_path.is_absolute():
+                            include_file = root_dir / include_path
+                        else:
+                            include_file = include_path
+                        ini_contents += process_include(include_file)
                 else:
                     ini_contents += line
             # add a newline at the end of the file, to avoid it being concatenated with the next file
