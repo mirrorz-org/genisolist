@@ -319,7 +319,9 @@ def process_ini(ini: Path) -> dict:
             for line in f:
                 if line.startswith("!include"):
                     include_glob = line.removeprefix("!include").strip()
-                    include_paths = glob(include_glob, root_dir=root_dir)
+                    include_paths = glob(
+                        include_glob, root_dir=root_dir, recursive=True
+                    )
                     assert include_paths, f"No file found for {include_glob}"
                     for include_path in include_paths:
                         include_path = Path(include_path)
