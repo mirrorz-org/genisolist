@@ -288,8 +288,12 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     # `%alias%` contains renames of repos
     aliases = []
     if sections.get("%alias%"):
+        alias_set = set()
         for key, value in sections["%alias%"].items():
             aliases.append((key, value))
+            if key in alias_set:
+                raise ValueError(f"Duplicate alias found: {key}")
+            alias_set.add(key)
 
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.

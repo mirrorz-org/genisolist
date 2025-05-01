@@ -53,7 +53,9 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
     python = python-release
     ```
 
-    每行的字段加上 `/` 之后会用于匹配 `location` 与 `pattern`（当 `pattern_use_name` 为 `false` 时）的**开头**，并按照字段值替换，以便仓库名与 genisolist 仓库存在差异的镜像站能够轻松使用仓库已有配置。例如，以上的 `python` 会匹配以 `python/` 开头的 `location` 和 `pattern`，并替换为 `python-release/`。
+    每行的字段加上 `/` 之后会用于匹配 `location` 与 `pattern`（当 `pattern_use_name` 为 `false` 时）的**开头**，并按照字段值替换，以便仓库名与 genisolist 仓库存在差异的镜像站能够轻松使用仓库已有配置。例如，以上配置适用于配置文件中路径开头为 python，但本地实际路径为 python-release 的情况。`python` 字段会匹配以 `python/` 开头的 `location` 和 `pattern`，并替换为 `python-release/`。
+
+    字段不允许重复。
 
 其他以 `%` 开头的 section 会被忽略，在新版本的 genisolist 中可能会添加其他的特殊 section。
 
