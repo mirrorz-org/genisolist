@@ -52,9 +52,9 @@ def get_platform_priority(platform: str) -> int:
                 break
         if score != 0:
             break
-    for os in oses:
-        if os in platform:
-            score += oses[os]
+    for os_ in oses:
+        if os_ in platform:
+            score += oses[os_]
             break
     return score
 
@@ -87,16 +87,16 @@ def render_list(template: str, result: re.Match) -> list:
     Substrings not starting with "$" would be kept as is in the list
     """
 
-    l = []
+    li = []
     for item in template.split():
         if not item.startswith("$"):
-            l.append(item)
+            li.append(item)
         else:
             grp = result.group(int(item[1:]))
             if grp is None:
                 grp = ""
-            l.append(grp)
-    return l
+            li.append(grp)
+    return li
 
 
 def str2bool(v: str) -> bool:
