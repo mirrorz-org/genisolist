@@ -284,7 +284,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
         for key, value in sections["%distro%"].items():
             if key.startswith("d"):
                 dN[value] = int(key[1:])
-    
+
     # `%alias%` contains renames of repos
     aliases = []
     if sections.get("%alias%"):
