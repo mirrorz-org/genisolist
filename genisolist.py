@@ -123,7 +123,7 @@ def aliases_replace(aliases: list, path: str) -> str:
 
     for alias in aliases:
         if path.startswith(alias[0] + "/"):
-            return path.replace(alias[0] + "/", alias[1] + "/", count=1)
+            return path.replace(alias[0] + "/", alias[1] + "/", 1)
     return path
 
 
