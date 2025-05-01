@@ -116,7 +116,18 @@ def str2bool(v: str) -> bool:
         raise ValueError(f"{v} is not a boolean value")
 
 
-def parse_section(section: dict, root: Path) -> list:
+def aliases_replace(aliases: list, path: str) -> str:
+    """
+    Replace the path with alias if it exists.
+    """
+
+    for alias in aliases:
+        if path.startswith(alias[0] + "/"):
+            return path.replace(alias[0] + "/", alias[1] + "/", count=1)
+    return path
+
+
+def parse_section(section: dict, root: Path, aliases: list) -> list:
     """
     Parse a distribution section and return a list of sorted file items.
 
@@ -161,13 +172,16 @@ def parse_section(section: dict, root: Path) -> list:
             locations.append(location)
             i += 1
     assert locations, "No location found in section"
+    locations = [aliases_replace(aliases, loc) for loc in locations]
 
+    pattern_use_name = str2bool(section.get("pattern_use_name", "false"))
     pattern = section.get("pattern", "")
     assert pattern, "No pattern found in section"
+    if not pattern_use_name:
+        pattern = aliases_replace(aliases, pattern)
     pattern = re.compile(pattern)
 
     listvers = int(section.get("listvers", 0xFF))
-    pattern_use_name = str2bool(section.get("pattern_use_name", "false"))
 
     files = defaultdict(list)
     for location in locations:
@@ -270,6 +284,12 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
         for key, value in sections["%distro%"].items():
             if key.startswith("d"):
                 dN[value] = int(key[1:])
+    
+    # `%alias%` contains renames of repos
+    aliases = []
+    if sections.get("%alias%"):
+        for key, value in sections["%alias%"].items():
+            aliases.append((key, value))
 
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
@@ -283,7 +303,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
             section["category"] = "os"
         section_category = section["category"]
         try:
-            for file_item in parse_section(section, root):
+            for file_item in parse_section(section, root, aliases):
                 results[(section_name, section_category)].append(file_item)
         except Exception as e:
             exit_with_error = True
