@@ -4,11 +4,12 @@
 import subprocess
 import argparse
 from pathlib import Path
+import shlex
 
 
-def main(upstream: str, dist: Path) -> None:
+def main(upstream: str, dist: Path, extra_args: list) -> None:
     p = subprocess.run(
-        ["rsync", "-a", "--no-motd", "-r", "--list-only", upstream],
+        ["rsync", "-a", "--no-motd", "-r", "--list-only", *extra_args, upstream],
         stdout=subprocess.PIPE,
         text=True,
     )
@@ -60,6 +61,12 @@ if __name__ == "__main__":
         default=Path("."),
         help="Path to save stub files, defaults to current directory",
     )
+    parser.add_argument(
+        "--extra-args",
+        type=str,
+        default="",
+        help="Extra arguments to pass to rsync (split by shlex)",
+    )
     args = parser.parse_args()
 
-    main(args.upstream, args.dist)
+    main(args.upstream, args.dist, shlex.split(args.extra_args))
