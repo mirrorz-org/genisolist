@@ -103,7 +103,8 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
         "urls": [
             {
                 "name": "2024.05.01 (x86_64, CLI-only)",
-                "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso"
+                "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso",
+                "size": 1073741824
             }
         ]
     }
@@ -117,6 +118,8 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
 - 第三个 `%s` 为 `type` 字段，格式为 `, {type}`，如果为空则不显示。
 
 如果没有 `platform` 字段，那么值为 `version` 字段。
+
+每个 `urls` 条目还包含 `size` 字段，值为匹配文件的大小，类型为整数，单位为字节。该值从本地文件系统元数据读取，无需读取文件内容；如果匹配路径是符号链接，则返回其目标文件的大小。空文件的大小为 `0`。上例中的大小仅为示意，实际输出以本地文件为准。
 
 ### 测试
 
@@ -147,7 +150,7 @@ $ DEBUG=1 python genisolist.py example.ini
 DEBUG:__main__:Location: archlinux/iso/latest/archlinux-*.iso
 DEBUG:__main__:File: archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso
 DEBUG:__main__:Matched: ('2024.05.01', 'x86_64')
-DEBUG:__main__:File item: {'path': 'archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso', 'category': 'os', 'distro': 'Arch Linux', 'version': '2024.05.01', 'type': 'CLI-only', 'platform': 'x86_64', 'sort_weight': (LooseVersion ('2024.05.01'), 100, 'CLI-only')}
+DEBUG:__main__:File item: {'path': 'archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso', 'size': 1073741824, 'category': 'os', 'distro': 'Arch Linux', 'version': '2024.05.01', 'type': 'CLI-only', 'platform': 'x86_64', 'sort_weight': (LooseVersion ('2024.05.01'), 100, 'CLI-only')}
 DEBUG:__main__:File: archlinux/iso/latest/archlinux-x86_64.iso
 DEBUG:__main__:Not matched: /tmp/genisolist/archlinux/iso/latest/archlinux-x86_64.iso
 DEBUG:__main__:Location: videolan-ftp/vlc/*/*/*
@@ -158,7 +161,7 @@ DEBUG:__main__:Location: github-release/googlefonts/*/*/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-cjk/LatestRelease/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-emoji/LatestRelease/*
 DEBUG:__main__:Location: github-release/googlefonts/noto-fonts/LatestRelease/*
-[{"distro": "Arch Linux", "category": "os", "urls": [{"name": "2024.05.01 (x86_64, CLI-only)", "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso"}]}]
+[{"distro": "Arch Linux", "category": "os", "urls": [{"name": "2024.05.01 (x86_64, CLI-only)", "url": "/archlinux/iso/latest/archlinux-2024.05.01-x86_64.iso", "size": 1073741824}]}]
 ```
 
 输出为 JSON 格式的字符串，可以使用 `jq` 等工具做后续处理。对于本地测试，可以使用 [utils/rsync-stub-generator.py](utils/rsync-stub-generator.py) 从镜像站获取文件，并在本地生成一致的目录结构：
