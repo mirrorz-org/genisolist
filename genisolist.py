@@ -201,9 +201,17 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
                 continue
             logger.debug("Matched: %r", result.groups())
 
+            try:
+                size = file_path.stat().st_size
+            except FileNotFoundError:
+                if not file_path.is_symlink():
+                    raise
+                logger.warning("Skipping broken symlink: %s", file_path)
+                continue
+
             file_item = {
                 "path": relative_path,
-                "size": file_path.stat().st_size,
+                "size": size,
                 "category": section.get("category", "os"),  # Default to "os"
                 "distro": section["distro"],
                 "version": render(section.get("version", ""), result),
