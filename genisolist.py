@@ -152,6 +152,7 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
 
     {
         "path": str (relative path to root),
+        "size": int (file size in bytes),
         "category": str,
         "version": str,
         "platform": str,
@@ -202,6 +203,7 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
 
             file_item = {
                 "path": relative_path,
+                "size": file_path.stat().st_size,
                 "category": section.get("category", "os"),  # Default to "os"
                 "distro": section["distro"],
                 "version": render(section.get("version", ""), result),
@@ -245,6 +247,7 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     {
         "name": str,
         "url": str,
+        "size": int (file size in bytes),
     }
     """
 
@@ -258,7 +261,7 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     else:
         desc = file_item["version"]
 
-    return {"name": desc, "url": url}
+    return {"name": desc, "url": url, "size": file_item["size"]}
 
 
 def gen_from_sections(sections: dict, strict: bool = False) -> list:
@@ -268,7 +271,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     {
         "distro": str,
         "category": str,
-        "urls": [{"name": str, "url": url}]
+        "urls": [{"name": str, "url": str, "size": int}]
     }
     """
     global exit_with_error
