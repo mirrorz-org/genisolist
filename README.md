@@ -91,6 +91,23 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
 
 - `nosort`：使用 `sort_by` 字段设置为常量字符串代替（排序操作仍会进行，由于排序是逆序的，最终的列表会反过来）。
 
+#### 国际化
+
+配置文件使用 UTF-8。**基础字段使用中文**，可通过 `字段[en_US]` 提供英文翻译：
+
+```ini
+distro = Ubuntu 衍生版
+distro[en_US] = Ubuntu flavors
+type = 网络安装镜像
+type[en_US] = Network installer
+```
+
+支持翻译的字段："distro", "version", "platform", "type"。
+
+语言后缀不区分大小写，翻译后缀目前仅支持 `en_US`。缺少翻译时使用中文原文；描述模板保留 `$0`–`$9` 捕获组语义，捕获内容本身不翻译。
+
+翻译不参与文件匹配、分组、版本数量限制或排序。同一 `(distro, category)` 的多个 section 可以共同提供名称翻译，但同一语言不能指定不同名称；此类冲突即使没有匹配文件也会报错。
+
 ### 输出格式
 
 输出为 JSON，例如下：
@@ -122,6 +139,17 @@ INI 格式由多个 **section** 组成，其中 `genisolist.ini` 中以 `%` 开�
 每个 `urls` 条目还包含 `size` 字段，值为匹配文件的大小，类型为整数，单位为字节。该值从本地文件系统元数据读取，无需读取文件内容；如果匹配路径是符号链接，则返回其目标文件的大小。空文件的大小为 `0`。上例中的大小仅为示意，实际输出以本地文件为准。
 
 如果符号链接的目标不存在，则记录警告并仅跳过这一项，不影响同一 section 的其他文件；`--strict` 模式下也如此。
+
+#### 国际化
+
+默认语言为 `zh_CN`，输出基础字段中的中文名称；`--lang zh_CN` 显式指定默认行为。`--lang en_US` 选择英文显示，缺少翻译时回退到中文；`--include-i18n` 额外输出 `distro_i18n` 和 `name_i18n` 字典（语言键为 `en_US`）。后两个选项可独立使用：
+
+```sh
+python3 genisolist.py example.ini
+python3 genisolist.py example.ini --lang zh_CN
+python3 genisolist.py example.ini --lang en_US
+python3 genisolist.py example.ini --include-i18n
+```
 
 ### 测试
 

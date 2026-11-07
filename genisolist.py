@@ -127,6 +127,32 @@ def aliases_replace(aliases: list, path: str) -> str:
     return path
 
 
+DEFAULT_LANG = "zh_CN"
+LOCALES = {"zh_cn": "zh_CN", "en_us": "en_US"}
+TRANSLATION_LOCALES = {"en_us": "en_US"}
+LOCALIZED_FIELDS = {"distro", "version", "platform", "type"}
+
+
+def translations(section):
+    localized = {}
+    for key, value in section.items():
+        if "[" not in key:
+            continue
+        match = re.fullmatch(r"(\w+)\[([^]]+)\]", key)
+        if not match or match[1] not in LOCALIZED_FIELDS:
+            raise ValueError(f"Invalid localized field: {key}")
+        locale = TRANSLATION_LOCALES.get(match[2].lower())
+        if locale is None:
+            raise ValueError(f"Unsupported locale: {match[2]}")
+        localized.setdefault(locale, {})[match[1]] = value
+        if match[1] != "distro":
+            groups = re.compile(section["pattern"]).groups
+            for capture in re.findall(r"\$(\d+)", value):
+                if int(capture) > groups or int(capture) >= 10:
+                    raise ValueError(f"Invalid capture ${capture} in {key}")
+    return localized
+
+
 def parse_section(section: dict, root: Path, aliases: list) -> list:
     """
     Parse a distribution section and return a list of sorted file items.
@@ -160,6 +186,8 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
         "sort_weight": list,
     }
     """
+
+    localized = translations(section)
 
     if "location" in section:
         locations = [section["location"]]
@@ -219,6 +247,15 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
                 "platform": render(section.get("platform", ""), result),
             }
 
+            file_item["localized"] = {
+                locale: {
+                    field: render(values.get(field, section.get(field, "")), result)
+                    for field in ("version", "platform", "type")
+                }
+                for locale, values in localized.items()
+                if any(field != "distro" for field in values)
+            }
+
             custom_sort_by = section.get("sort_by", "")
             if not custom_sort_by:
                 file_item["sort_weight"] = [
@@ -247,7 +284,7 @@ def parse_section(section: dict, root: Path, aliases: list) -> list:
     return results
 
 
-def parse_file(file_item: dict, urlbase: str) -> dict:
+def parse_file(file_item: dict, urlbase: str, *, lang=None, include_i18n=False) -> dict:
     """
     Parse a file item (see parse_section() description)
     and return a dictionary with following schema:
@@ -259,6 +296,10 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     }
     """
 
+    names = {
+        locale: parse_file({**file_item, **values, "localized": {}}, urlbase)["name"]
+        for locale, values in file_item.get("localized", {}).items()
+    }
     url = urljoin(urlbase, file_item["path"])
     if file_item["platform"]:
         desc = "%s (%s%s)" % (
@@ -269,10 +310,15 @@ def parse_file(file_item: dict, urlbase: str) -> dict:
     else:
         desc = file_item["version"]
 
-    return {"name": desc, "url": url, "size": file_item["size"]}
+    output = {"name": names.get(lang, desc), "url": url, "size": file_item["size"]}
+    if include_i18n and names:
+        output["name_i18n"] = names
+    return output
 
 
-def gen_from_sections(sections: dict, strict: bool = False) -> list:
+def gen_from_sections(
+    sections: dict, strict: bool = False, *, lang=None, include_i18n=False
+) -> list:
     """
     Parse sections and return a list. Each item of the list is a dictionary with following schema:
 
@@ -283,6 +329,38 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     }
     """
     global exit_with_error
+
+    if lang is None:
+        lang = DEFAULT_LANG
+    requested = lang
+    lang = LOCALES.get(lang.lower())
+    if lang is None:
+        raise ValueError(f"Unsupported locale: {requested}")
+    if lang == DEFAULT_LANG:
+        lang = None
+    distro_names = defaultdict(dict)
+    valid_sections = {}
+    for sname, section in sections.items():
+        if sname.startswith("%"):
+            continue
+        try:
+            localized = translations(section)
+        except Exception:
+            exit_with_error = True
+            logger.exception("Error parsing section [%s]", sname)
+            if strict:
+                raise
+            continue
+        key = (section["distro"], section.get("category", "os"))
+        for locale, values in localized.items():
+            if "distro" in values:
+                previous = distro_names[key].get(locale)
+                if previous is not None and previous != values["distro"]:
+                    raise ValueError(
+                        f"Conflicting {locale} distro translations for {key}"
+                    )
+                distro_names[key][locale] = values["distro"]
+        valid_sections[sname] = section
 
     # `%main%` contains root path and url base
     main = sections.get("%main%", {})
@@ -309,9 +387,7 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     # Following sections represent different distributions each
     # Section name would be ignored. Note that it's possible that a distribution has multiple sections.
     results = defaultdict(list)
-    for sname, section in sections.items():
-        if sname.startswith("%"):
-            continue
+    for sname, section in valid_sections.items():
         section_name = section["distro"]
         # set default category to "os", if not exists
         if "category" not in section:
@@ -329,7 +405,10 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     for k in results:
         v = results[k]
         v.sort(key=lambda x: x["sort_weight"], reverse=True)
-        results[k] = [parse_file(file_item, urlbase) for file_item in v]
+        results[k] = [
+            parse_file(file_item, urlbase, lang=lang, include_i18n=include_i18n)
+            for file_item in v
+        ]
 
     # Convert results to output
     results = [
@@ -337,6 +416,11 @@ def gen_from_sections(sections: dict, strict: bool = False) -> list:
     ]
     results.sort(key=lambda x: dN.get(x["distro"], 0xFFFF))
 
+    for item in results:
+        names = distro_names[(item["distro"], item["category"])]
+        if include_i18n and names:
+            item["distro_i18n"] = names
+        item["distro"] = names.get(lang, item["distro"])
     return results
 
 
@@ -350,7 +434,7 @@ def process_ini(ini: Path) -> dict:
     def process_include(ini: Path) -> str:
         ini_contents = ""
         root_dir = ini.parent
-        with open(ini) as f:
+        with open(ini, encoding="utf-8") as f:
             for line in f:
                 if line.startswith("!include"):
                     include_glob = line.removeprefix("!include").strip()
@@ -387,12 +471,27 @@ if __name__ == "__main__":
     parser = ArgumentParser("genisolist")
     parser.add_argument("ini", help="Path to the ini file.", type=Path)
     parser.add_argument("--strict", help="Enable strict mode", action="store_true")
+    parser.add_argument(
+        "--lang",
+        choices=("zh_CN", "en_US"),
+        default=DEFAULT_LANG,
+        help="Display language (default: zh_CN)",
+    )
+    parser.add_argument(
+        "--include-i18n", action="store_true", help="Include available translation maps"
+    )
     args = parser.parse_args()
     if not args.ini:
         parser.print_help()
         sys.exit(1)
 
     sections = process_ini(args.ini)
-    print(json.dumps(gen_from_sections(sections, args.strict)))
+    print(
+        json.dumps(
+            gen_from_sections(
+                sections, args.strict, lang=args.lang, include_i18n=args.include_i18n
+            )
+        )
+    )
     if exit_with_error:
         sys.exit(1)
